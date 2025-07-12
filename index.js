@@ -64,6 +64,38 @@ app.post('/extract-text', upload.single('pdfFile'), async (req, res) => {
     res.status(500).json({ error: 'Gagal memproses file PDF di server.' });
   }
 });
+app.post('/', upload.single('pdfFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Tidak ada file yang diunggah.' });
+    }
+
+    console.log(`Menerima file: ${req.file.originalname} (${(req.file.size / 1024).toFixed(2)} KB)`);
+
+    const fileBuffer = req.file.buffer;
+
+    const data = await pdf(fileBuffer);
+
+    console.log('--- Hasil Ekstraksi PDF ---');
+    console.log(`Total Halaman: ${data.numpages}`);
+    console.log(`Total Karakter: ${data.text.length}`);
+    console.log('Preview Teks (500 karakter pertama):');
+    console.log(data.text);
+    console.log('--------------------------');
+
+    res.status(200).json({
+      text: data.text,
+      metadata: {
+        pages: data.numpages,
+        info: data.info,
+      }
+    });
+
+  } catch (error) {
+    console.error('Error saat memproses PDF:', error);
+    res.status(500).json({ error: 'Gagal memproses file PDF di server.' });
+  }
+});
 
 app.listen(port, () => {
   console.log(`🚀 Server ekstraksi PDF berjalan di http://localhost:${port}`);
